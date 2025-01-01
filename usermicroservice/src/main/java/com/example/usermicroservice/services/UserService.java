@@ -112,13 +112,10 @@ public class UserService {
                 throw new UserNotFoundException();// we should create another exception but it works
             }
         } catch (UserNotFoundException e) {
-<<<<<<< HEAD
             Integer price =bikeRentEvent.getTimeRentHours()*priceRentHour;
             User user = userRepository.findById(bikeRentEvent.getIdUser()).get();
             user.setIsInTransaction(false);
             user.setBalance(user.getBalance() + price);
-=======
->>>>>>> fad0f612ede9d27af9bf3601e55c1e16a4745d52
             kafkaTemplateForBikeRentEvent.send("rollbackCheckUserBalanceTopic", bikeRentEvent);
         }
     }
