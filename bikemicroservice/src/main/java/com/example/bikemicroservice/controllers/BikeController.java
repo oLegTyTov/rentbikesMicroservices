@@ -18,8 +18,14 @@ public class BikeController {
     @Autowired
     private BikeService bikeService;
 @PostMapping("/doRentBike")
-public String doRentBike(@RequestParam Long id_bike,@RequestParam Integer timeRentHours,@AuthenticationPrincipal UserSecurity userSecurity) {
-    bikeService.doRentBike(new BikeRentEvent(userSecurity.getIdUser(),id_bike, timeRentHours,null));
-    return "Transaction started";
+public String doRentBike(@RequestParam Long idBike,@RequestParam Integer timeRentHours,@AuthenticationPrincipal UserSecurity userSecurity) {
+    bikeService.changeBikeTransactionRentBike(new BikeRentEvent(userSecurity.getIdUser(),idBike, timeRentHours,null));
+    return "doRentBike Transaction started";
 }
+@PostMapping("/returnBike")
+public String returnBike(@RequestParam Long idBike,@AuthenticationPrincipal UserSecurity userSecurity,@RequestParam Long idSlot) {    
+    bikeService.changeBikeTransactionReturnBike(new BikeRentEvent(userSecurity.getIdUser(),idBike,null,idSlot));
+    return "returnBike Transaction started";
+}
+
 }

@@ -40,6 +40,10 @@ public String getEmailByAccessToken(@PathVariable String accessToken) {
     return tokenService.getUsernameByAccessToken(accessToken);
 }
 
+@GetMapping("/getAccessTokenByRefreshToken")
+public String getAccessTokenByRefreshToken(@RequestParam String refreshToken) {
+    return tokenService.getAccessTokenByRefreshToken(refreshToken);
+}
 
 
 }

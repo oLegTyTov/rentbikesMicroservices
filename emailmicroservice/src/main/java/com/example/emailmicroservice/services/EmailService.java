@@ -50,7 +50,7 @@ public class EmailService {
     helper.setTo(createUserEvent.getEmail());
     helper.setSubject("Verification");
     helper.setText(htmlContent, true);
-    helper.setFrom("");
+    helper.setFrom("olegbober2282@gmail.com");
     mailSender.send(message);
   }
 }

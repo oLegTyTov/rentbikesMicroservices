@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 
 import com.example.bikemicroservice.entities.Bike;
 import com.example.bikemicroservice.entities.BikeStatus;
-import com.example.bikemicroservice.exceptions.BikeException;
+import com.example.bikemicroservice.exceptions.BikeNotFoundException;
 import com.example.bikemicroservice.repositories.BikeRepository;
 import com.example.commonresources.events.BikeRentEvent;
 
@@ -21,12 +21,12 @@ public class BikeService {
     private KafkaTemplate<String, BikeRentEvent> kafkaTemplate;
 
     // begining of saga choreography pattern
-    public void doRentBike(BikeRentEvent bikeRentEvent) {
+    public void changeBikeTransactionRentBike(BikeRentEvent bikeRentEvent) {
         try {
             System.out.println(bikeRentEvent.getIdBike());
-            Bike bike = bikeRepository.findById(bikeRentEvent.getIdBike()).orElseThrow(() -> new BikeException());
+            Bike bike = bikeRepository.findById(bikeRentEvent.getIdBike()).orElseThrow(() -> new BikeNotFoundException());
             if (bike.getBikeStatus() != BikeStatus.AVAILABLE || bike.getIsInTransaction()) {
-                throw new BikeException();
+                throw new BikeNotFoundException();
             } else {
                 bike.setBikeStatus(BikeStatus.INUSE);
                 bikeRentEvent.setIdSlot(bike.getIdSlot());
@@ -35,7 +35,7 @@ public class BikeService {
                 bikeRepository.save(bike);
                 kafkaTemplate.send("successBikeChangedStatusTopic", bikeRentEvent);
             }
-        } catch (BikeException e) {
+        } catch (BikeNotFoundException e) {
             System.out.println("errorTrnasactionRentBike");
         }
     }
@@ -54,5 +54,32 @@ public class BikeService {
         Bike bike = bikeRepository.findById(bikeRentEvent.getIdBike()).get();
         bike.setIsInTransaction(false);
         bikeRepository.save(bike);
+    }
+
+    public void changeBikeTransactionReturnBike(BikeRentEvent bikeRentEvent) {
+        try{
+        Bike bike=bikeRepository.findById(bikeRentEvent.getIdBike()).orElseThrow(()->new BikeNotFoundException());
+        if(bike.getBikeStatus()==BikeStatus.INUSE && !bike.getIsInTransaction())
+        {
+        bike.setBikeStatus(BikeStatus.AVAILABLE);
+        bike.setIdSlot(bikeRentEvent.getIdSlot());
+        bike.setIsInTransaction(true);
+        bikeRepository.save(bike);
+        kafkaTemplate.send("changedBikeReturnBikeTopic",bikeRentEvent);
+        }
+        }
+        catch(BikeNotFoundException e)
+        {
+        System.out.println("BikeNotFoundException");
+        }
+    }
+    @KafkaListener(topics = "stationRollabackReturnBikeTopic",containerFactory = "kafkaListenerContainerFactoryBikeRentEvent")
+    public void rollBackBikeChangeTransactionReturnBike(BikeRentEvent bikeRentEvent)
+    {
+    Bike bike=bikeRepository.findById(bikeRentEvent.getIdBike()).get();
+    bike.setBikeStatus(BikeStatus.INUSE);
+    bike.setIdSlot(null);
+    bike.setIsInTransaction(false);
+    bikeRepository.save(bike);
     }
 }

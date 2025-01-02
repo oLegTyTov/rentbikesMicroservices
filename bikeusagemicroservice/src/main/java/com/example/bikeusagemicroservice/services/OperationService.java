@@ -11,28 +11,42 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import com.example.bikeusagemicroservice.dtos.ResponseCheck;
-import com.example.bikeusagemicroservice.entities.Operation;
-import com.example.bikeusagemicroservice.entities.TypeOperation;
-import com.example.bikeusagemicroservice.repositories.OperationRepository;
+import com.example.bikeusagemicroservice.entities.RentOperation;
+import com.example.bikeusagemicroservice.entities.ReturnOperation;
+import com.example.bikeusagemicroservice.repositories.RentOperationRepository;
+import com.example.bikeusagemicroservice.repositories.ReturnOperationRepository;
 import com.example.commonresources.events.BikeRentEvent;
 
 @Service
 public class OperationService {
     @Autowired
-    private OperationRepository operationRepository;
+    private RentOperationRepository rentOperationRepository;
+    @Autowired
+    private ReturnOperationRepository returnOperationRepository;
     @Autowired
     private KafkaTemplate<String,BikeRentEvent>kafkaRentBike;
     @KafkaListener(topics = "successRentBikeUpdateStation",containerFactory = "kafkaListenerContainerFactoryBikeRentEvent")
     //the final step of transaction rentBike
     public void addInformationRentBike(BikeRentEvent bikeRentEvent)
     {
-        Operation operation=new Operation();
+        RentOperation operation=new RentOperation();
         operation.setBikeId(bikeRentEvent.getIdBike());
         operation.setTimestampBegin(LocalDateTime.now());
+        operation.setIdSlot(bikeRentEvent.getIdSlot());
         operation.setTimestampEnd(LocalDateTime.now().plusHours(bikeRentEvent.getTimeRentHours().longValue()));
         operation.setUserId(bikeRentEvent.getIdUser());
-        operation.setTypeOperation(TypeOperation.RENTAL);
-    operationRepository.save(operation);
+    rentOperationRepository.save(operation);
+    kafkaRentBike.send("successRentBikeTopic",bikeRentEvent);
+    }
+    @KafkaListener(topics = "stationChangedReturnBikeTopic", containerFactory = "kafkaListenerContainerFactoryBikeRentEvent")
+    public void addInformationTransactionReturnBike(BikeRentEvent bikeRentEvent)
+    {
+    ReturnOperation returnOperation=new ReturnOperation();
+    returnOperation.setBikeId(bikeRentEvent.getIdBike());
+    returnOperation.setTimestampReturnBike(LocalDateTime.now());
+    returnOperation.setUserId(bikeRentEvent.getIdUser());
+    returnOperation.setSlotId(bikeRentEvent.getIdSlot());
+    returnOperationRepository.save(returnOperation);
     kafkaRentBike.send("successRentBikeTopic",bikeRentEvent);
     }
 }

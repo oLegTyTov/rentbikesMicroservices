@@ -15,16 +15,13 @@ import lombok.NoArgsConstructor;
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
-public class Operation {
+public class RentOperation {
 @Id
 @GeneratedValue(strategy = GenerationType.IDENTITY)
 private Long id;
 private Long bikeId;
 private Long userId;
-@Enumerated(EnumType.STRING)
-private TypeOperation typeOperation;
 private LocalDateTime timestampBegin;
 private LocalDateTime timestampEnd;
-
-
+private Long idSlot;
 }

@@ -132,4 +132,12 @@ public void clearTokensNotActual() {
         }
         return jwtUtils.extractUsernameOfAccessToken(accessToken);
     }
+
+    public String getAccessTokenByRefreshToken(String refreshToken) {
+        if(!isJwtFormat(refreshToken) && jwtUtils.validateRefreshToken(refreshToken))
+        {
+        throw new MyBadRequestException();
+        }
+        return jwtUtils.generateAccessToken(jwtUtils.extractUsernameOfRefreshToken(refreshToken));
+    }
 }

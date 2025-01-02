@@ -12,5 +12,5 @@ public class BikeRentEvent {
     private Long idUser;
     private Long idBike;
     private Integer timeRentHours;
-    private Long idSlot;//we need this field only for rollback
+    private Long idSlot;
 }

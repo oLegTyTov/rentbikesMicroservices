@@ -36,4 +36,27 @@ public class StationService {
             stationRepository.flush();
             kafkaTemplateRentBike.send("successRentBikeUpdateStation",bikeRentEvent);
     }
+    @KafkaListener(topics = "changedBikeReturnBikeTopic",containerFactory = "kafkaListenerContainerFactoryBikeRentEvent")
+    public void changeStationTransactionBikeReturn(BikeRentEvent bikeRentEvent)
+    {
+    try{
+        Slot slot=slotRepository.findById(bikeRentEvent.getIdSlot()).orElseThrow(()->new SlotNotFoundException());
+        if(slot.getStatusSlot()==StatusSlot.OCCUPIED)
+        {
+        throw new SlotNotFoundException();
+        }
+        slot.setBikeId(bikeRentEvent.getIdBike());
+        slot.setStatusSlot(StatusSlot.OCCUPIED);
+        slotRepository.save(slot);
+        Station station=slot.getStation();
+        station.setAvailableSlots(station.getAvailableSlots()-1);
+        station.setOccupiedSlots(station.getOccupiedSlots()+1);
+        stationRepository.save(station);
+        kafkaTemplateRentBike.send("stationChangedReturnBikeTopic",bikeRentEvent);
+    }
+    catch(SlotNotFoundException e)
+    {
+        kafkaTemplateRentBike.send("stationRollabackReturnBikeTopic",bikeRentEvent);
+    }
+    }
 }
